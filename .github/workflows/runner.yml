@@ -1,0 +1,39 @@
+name: Cloud Relay 5-Hour Shift Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      manual_note:
+        description: 'Optional dispatch note'
+        required: false
+        default: 'Dispatched by Master Bot'
+
+jobs:
+  relay_shift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360 # GitHub 6-hour hard cutoff
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install telethon psycopg2-binary requests yt-dlp
+
+      - name: Run Relay Shift Worker
+        env:
+          PYTHONUNBUFFERED: "1"
+          TG_API_ID: ${{ secrets.TG_API_ID || vars.TG_API_ID || secrets.API_ID || vars.API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH || vars.TG_API_HASH || secrets.API_HASH || vars.API_HASH }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN || vars.BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL || secrets.DB_URL || vars.DB_URL }}
+        run: |
+          python -u relay_runner.py
